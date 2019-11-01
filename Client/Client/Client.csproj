@@ -169,7 +169,9 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="FileTransferService.cs" />
+    <Compile Include="..\..\thriftSources\gen-csharp\Client\FileTransferService.cs">
+      <Link>FileTransferService.cs</Link>
+    </Compile>
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
