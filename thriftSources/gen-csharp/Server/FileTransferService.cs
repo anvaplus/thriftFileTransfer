@@ -19,13 +19,18 @@ namespace Server
 {
   public partial class FileTransferService {
     public interface ISync {
-      string Transfer(string name);
+      string Transfer(string message);
+      string UploadInnerXml(string name, string innerXml);
     }
 
     public interface Iface : ISync {
       #if SILVERLIGHT
-      IAsyncResult Begin_Transfer(AsyncCallback callback, object state, string name);
+      IAsyncResult Begin_Transfer(AsyncCallback callback, object state, string message);
       string End_Transfer(IAsyncResult asyncResult);
+      #endif
+      #if SILVERLIGHT
+      IAsyncResult Begin_UploadInnerXml(AsyncCallback callback, object state, string name, string innerXml);
+      string End_UploadInnerXml(IAsyncResult asyncResult);
       #endif
     }
 
@@ -88,9 +93,9 @@ namespace Server
       
       #if SILVERLIGHT
       
-      public IAsyncResult Begin_Transfer(AsyncCallback callback, object state, string name)
+      public IAsyncResult Begin_Transfer(AsyncCallback callback, object state, string message)
       {
-        return send_Transfer(callback, state, name);
+        return send_Transfer(callback, state, message);
       }
 
       public string End_Transfer(IAsyncResult asyncResult)
@@ -101,24 +106,24 @@ namespace Server
 
       #endif
 
-      public string Transfer(string name)
+      public string Transfer(string message)
       {
         #if SILVERLIGHT
-        var asyncResult = Begin_Transfer(null, null, name);
+        var asyncResult = Begin_Transfer(null, null, message);
         return End_Transfer(asyncResult);
 
         #else
-        send_Transfer(name);
+        send_Transfer(message);
         return recv_Transfer();
 
         #endif
       }
       #if SILVERLIGHT
-      public IAsyncResult send_Transfer(AsyncCallback callback, object state, string name)
+      public IAsyncResult send_Transfer(AsyncCallback callback, object state, string message)
       {
         oprot_.WriteMessageBegin(new TMessage("Transfer", TMessageType.Call, seqid_));
         Transfer_args args = new Transfer_args();
-        args.Name = name;
+        args.Message = message;
         args.Write(oprot_);
         oprot_.WriteMessageEnd();
         return oprot_.Transport.BeginFlush(callback, state);
@@ -126,11 +131,11 @@ namespace Server
 
       #else
 
-      public void send_Transfer(string name)
+      public void send_Transfer(string message)
       {
         oprot_.WriteMessageBegin(new TMessage("Transfer", TMessageType.Call, seqid_));
         Transfer_args args = new Transfer_args();
-        args.Name = name;
+        args.Message = message;
         args.Write(oprot_);
         oprot_.WriteMessageEnd();
         oprot_.Transport.Flush();
@@ -154,12 +159,84 @@ namespace Server
         throw new TApplicationException(TApplicationException.ExceptionType.MissingResult, "Transfer failed: unknown result");
       }
 
+      
+      #if SILVERLIGHT
+      
+      public IAsyncResult Begin_UploadInnerXml(AsyncCallback callback, object state, string name, string innerXml)
+      {
+        return send_UploadInnerXml(callback, state, name, innerXml);
+      }
+
+      public string End_UploadInnerXml(IAsyncResult asyncResult)
+      {
+        oprot_.Transport.EndFlush(asyncResult);
+        return recv_UploadInnerXml();
+      }
+
+      #endif
+
+      public string UploadInnerXml(string name, string innerXml)
+      {
+        #if SILVERLIGHT
+        var asyncResult = Begin_UploadInnerXml(null, null, name, innerXml);
+        return End_UploadInnerXml(asyncResult);
+
+        #else
+        send_UploadInnerXml(name, innerXml);
+        return recv_UploadInnerXml();
+
+        #endif
+      }
+      #if SILVERLIGHT
+      public IAsyncResult send_UploadInnerXml(AsyncCallback callback, object state, string name, string innerXml)
+      {
+        oprot_.WriteMessageBegin(new TMessage("UploadInnerXml", TMessageType.Call, seqid_));
+        UploadInnerXml_args args = new UploadInnerXml_args();
+        args.Name = name;
+        args.InnerXml = innerXml;
+        args.Write(oprot_);
+        oprot_.WriteMessageEnd();
+        return oprot_.Transport.BeginFlush(callback, state);
+      }
+
+      #else
+
+      public void send_UploadInnerXml(string name, string innerXml)
+      {
+        oprot_.WriteMessageBegin(new TMessage("UploadInnerXml", TMessageType.Call, seqid_));
+        UploadInnerXml_args args = new UploadInnerXml_args();
+        args.Name = name;
+        args.InnerXml = innerXml;
+        args.Write(oprot_);
+        oprot_.WriteMessageEnd();
+        oprot_.Transport.Flush();
+      }
+      #endif
+
+      public string recv_UploadInnerXml()
+      {
+        TMessage msg = iprot_.ReadMessageBegin();
+        if (msg.Type == TMessageType.Exception) {
+          TApplicationException x = TApplicationException.Read(iprot_);
+          iprot_.ReadMessageEnd();
+          throw x;
+        }
+        UploadInnerXml_result result = new UploadInnerXml_result();
+        result.Read(iprot_);
+        iprot_.ReadMessageEnd();
+        if (result.__isset.success) {
+          return result.Success;
+        }
+        throw new TApplicationException(TApplicationException.ExceptionType.MissingResult, "UploadInnerXml failed: unknown result");
+      }
+
     }
     public class Processor : TProcessor {
       public Processor(ISync iface)
       {
         iface_ = iface;
         processMap_["Transfer"] = Transfer_Process;
+        processMap_["UploadInnerXml"] = UploadInnerXml_Process;
       }
 
       protected delegate void ProcessFunction(int seqid, TProtocol iprot, TProtocol oprot);
@@ -200,7 +277,7 @@ namespace Server
         Transfer_result result = new Transfer_result();
         try
         {
-          result.Success = iface_.Transfer(args.Name);
+          result.Success = iface_.Transfer(args.Message);
           oprot.WriteMessageBegin(new TMessage("Transfer", TMessageType.Reply, seqid)); 
           result.Write(oprot);
         }
@@ -220,6 +297,34 @@ namespace Server
         oprot.Transport.Flush();
       }
 
+      public void UploadInnerXml_Process(int seqid, TProtocol iprot, TProtocol oprot)
+      {
+        UploadInnerXml_args args = new UploadInnerXml_args();
+        args.Read(iprot);
+        iprot.ReadMessageEnd();
+        UploadInnerXml_result result = new UploadInnerXml_result();
+        try
+        {
+          result.Success = iface_.UploadInnerXml(args.Name, args.InnerXml);
+          oprot.WriteMessageBegin(new TMessage("UploadInnerXml", TMessageType.Reply, seqid)); 
+          result.Write(oprot);
+        }
+        catch (TTransportException)
+        {
+          throw;
+        }
+        catch (Exception ex)
+        {
+          Console.Error.WriteLine("Error occurred in processor:");
+          Console.Error.WriteLine(ex.ToString());
+          TApplicationException x = new TApplicationException        (TApplicationException.ExceptionType.InternalError," Internal error.");
+          oprot.WriteMessageBegin(new TMessage("UploadInnerXml", TMessageType.Exception, seqid));
+          x.Write(oprot);
+        }
+        oprot.WriteMessageEnd();
+        oprot.Transport.Flush();
+      }
+
     }
 
 
@@ -228,18 +333,18 @@ namespace Server
     #endif
     public partial class Transfer_args : TBase
     {
-      private string _name;
+      private string _message;
 
-      public string Name
+      public string Message
       {
         get
         {
-          return _name;
+          return _message;
         }
         set
         {
-          __isset.name = true;
-          this._name = value;
+          __isset.message = true;
+          this._message = value;
         }
       }
 
@@ -249,7 +354,7 @@ namespace Server
       [Serializable]
       #endif
       public struct Isset {
-        public bool name;
+        public bool message;
       }
 
       public Transfer_args() {
@@ -272,7 +377,7 @@ namespace Server
             {
               case 1:
                 if (field.Type == TType.String) {
-                  Name = iprot.ReadString();
+                  Message = iprot.ReadString();
                 } else { 
                   TProtocolUtil.Skip(iprot, field.Type);
                 }
@@ -298,12 +403,12 @@ namespace Server
           TStruct struc = new TStruct("Transfer_args");
           oprot.WriteStructBegin(struc);
           TField field = new TField();
-          if (Name != null && __isset.name) {
-            field.Name = "name";
+          if (Message != null && __isset.message) {
+            field.Name = "message";
             field.Type = TType.String;
             field.ID = 1;
             oprot.WriteFieldBegin(field);
-            oprot.WriteString(Name);
+            oprot.WriteString(Message);
             oprot.WriteFieldEnd();
           }
           oprot.WriteFieldStop();
@@ -318,11 +423,11 @@ namespace Server
       public override string ToString() {
         StringBuilder __sb = new StringBuilder("Transfer_args(");
         bool __first = true;
-        if (Name != null && __isset.name) {
+        if (Message != null && __isset.message) {
           if(!__first) { __sb.Append(", "); }
           __first = false;
-          __sb.Append("Name: ");
-          __sb.Append(Name);
+          __sb.Append("Message: ");
+          __sb.Append(Message);
         }
         __sb.Append(")");
         return __sb.ToString();
@@ -428,6 +533,261 @@ namespace Server
 
       public override string ToString() {
         StringBuilder __sb = new StringBuilder("Transfer_result(");
+        bool __first = true;
+        if (Success != null && __isset.success) {
+          if(!__first) { __sb.Append(", "); }
+          __first = false;
+          __sb.Append("Success: ");
+          __sb.Append(Success);
+        }
+        __sb.Append(")");
+        return __sb.ToString();
+      }
+
+    }
+
+
+    #if !SILVERLIGHT
+    [Serializable]
+    #endif
+    public partial class UploadInnerXml_args : TBase
+    {
+      private string _name;
+      private string _innerXml;
+
+      public string Name
+      {
+        get
+        {
+          return _name;
+        }
+        set
+        {
+          __isset.name = true;
+          this._name = value;
+        }
+      }
+
+      public string InnerXml
+      {
+        get
+        {
+          return _innerXml;
+        }
+        set
+        {
+          __isset.innerXml = true;
+          this._innerXml = value;
+        }
+      }
+
+
+      public Isset __isset;
+      #if !SILVERLIGHT
+      [Serializable]
+      #endif
+      public struct Isset {
+        public bool name;
+        public bool innerXml;
+      }
+
+      public UploadInnerXml_args() {
+      }
+
+      public void Read (TProtocol iprot)
+      {
+        iprot.IncrementRecursionDepth();
+        try
+        {
+          TField field;
+          iprot.ReadStructBegin();
+          while (true)
+          {
+            field = iprot.ReadFieldBegin();
+            if (field.Type == TType.Stop) { 
+              break;
+            }
+            switch (field.ID)
+            {
+              case 1:
+                if (field.Type == TType.String) {
+                  Name = iprot.ReadString();
+                } else { 
+                  TProtocolUtil.Skip(iprot, field.Type);
+                }
+                break;
+              case 2:
+                if (field.Type == TType.String) {
+                  InnerXml = iprot.ReadString();
+                } else { 
+                  TProtocolUtil.Skip(iprot, field.Type);
+                }
+                break;
+              default: 
+                TProtocolUtil.Skip(iprot, field.Type);
+                break;
+            }
+            iprot.ReadFieldEnd();
+          }
+          iprot.ReadStructEnd();
+        }
+        finally
+        {
+          iprot.DecrementRecursionDepth();
+        }
+      }
+
+      public void Write(TProtocol oprot) {
+        oprot.IncrementRecursionDepth();
+        try
+        {
+          TStruct struc = new TStruct("UploadInnerXml_args");
+          oprot.WriteStructBegin(struc);
+          TField field = new TField();
+          if (Name != null && __isset.name) {
+            field.Name = "name";
+            field.Type = TType.String;
+            field.ID = 1;
+            oprot.WriteFieldBegin(field);
+            oprot.WriteString(Name);
+            oprot.WriteFieldEnd();
+          }
+          if (InnerXml != null && __isset.innerXml) {
+            field.Name = "innerXml";
+            field.Type = TType.String;
+            field.ID = 2;
+            oprot.WriteFieldBegin(field);
+            oprot.WriteString(InnerXml);
+            oprot.WriteFieldEnd();
+          }
+          oprot.WriteFieldStop();
+          oprot.WriteStructEnd();
+        }
+        finally
+        {
+          oprot.DecrementRecursionDepth();
+        }
+      }
+
+      public override string ToString() {
+        StringBuilder __sb = new StringBuilder("UploadInnerXml_args(");
+        bool __first = true;
+        if (Name != null && __isset.name) {
+          if(!__first) { __sb.Append(", "); }
+          __first = false;
+          __sb.Append("Name: ");
+          __sb.Append(Name);
+        }
+        if (InnerXml != null && __isset.innerXml) {
+          if(!__first) { __sb.Append(", "); }
+          __first = false;
+          __sb.Append("InnerXml: ");
+          __sb.Append(InnerXml);
+        }
+        __sb.Append(")");
+        return __sb.ToString();
+      }
+
+    }
+
+
+    #if !SILVERLIGHT
+    [Serializable]
+    #endif
+    public partial class UploadInnerXml_result : TBase
+    {
+      private string _success;
+
+      public string Success
+      {
+        get
+        {
+          return _success;
+        }
+        set
+        {
+          __isset.success = true;
+          this._success = value;
+        }
+      }
+
+
+      public Isset __isset;
+      #if !SILVERLIGHT
+      [Serializable]
+      #endif
+      public struct Isset {
+        public bool success;
+      }
+
+      public UploadInnerXml_result() {
+      }
+
+      public void Read (TProtocol iprot)
+      {
+        iprot.IncrementRecursionDepth();
+        try
+        {
+          TField field;
+          iprot.ReadStructBegin();
+          while (true)
+          {
+            field = iprot.ReadFieldBegin();
+            if (field.Type == TType.Stop) { 
+              break;
+            }
+            switch (field.ID)
+            {
+              case 0:
+                if (field.Type == TType.String) {
+                  Success = iprot.ReadString();
+                } else { 
+                  TProtocolUtil.Skip(iprot, field.Type);
+                }
+                break;
+              default: 
+                TProtocolUtil.Skip(iprot, field.Type);
+                break;
+            }
+            iprot.ReadFieldEnd();
+          }
+          iprot.ReadStructEnd();
+        }
+        finally
+        {
+          iprot.DecrementRecursionDepth();
+        }
+      }
+
+      public void Write(TProtocol oprot) {
+        oprot.IncrementRecursionDepth();
+        try
+        {
+          TStruct struc = new TStruct("UploadInnerXml_result");
+          oprot.WriteStructBegin(struc);
+          TField field = new TField();
+
+          if (this.__isset.success) {
+            if (Success != null) {
+              field.Name = "Success";
+              field.Type = TType.String;
+              field.ID = 0;
+              oprot.WriteFieldBegin(field);
+              oprot.WriteString(Success);
+              oprot.WriteFieldEnd();
+            }
+          }
+          oprot.WriteFieldStop();
+          oprot.WriteStructEnd();
+        }
+        finally
+        {
+          oprot.DecrementRecursionDepth();
+        }
+      }
+
+      public override string ToString() {
+        StringBuilder __sb = new StringBuilder("UploadInnerXml_result(");
         bool __first = true;
         if (Success != null && __isset.success) {
           if(!__first) { __sb.Append(", "); }
