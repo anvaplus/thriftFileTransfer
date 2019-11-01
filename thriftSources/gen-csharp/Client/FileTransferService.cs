@@ -21,6 +21,8 @@ namespace Client
     public interface ISync {
       string Transfer(string message);
       string UploadInnerXml(string name, string innerXml);
+      List<string> GetServerXmlList();
+      string DownloadInnerXml(string xmlName);
     }
 
     public interface Iface : ISync {
@@ -31,6 +33,14 @@ namespace Client
       #if SILVERLIGHT
       IAsyncResult Begin_UploadInnerXml(AsyncCallback callback, object state, string name, string innerXml);
       string End_UploadInnerXml(IAsyncResult asyncResult);
+      #endif
+      #if SILVERLIGHT
+      IAsyncResult Begin_GetServerXmlList(AsyncCallback callback, object state);
+      List<string> End_GetServerXmlList(IAsyncResult asyncResult);
+      #endif
+      #if SILVERLIGHT
+      IAsyncResult Begin_DownloadInnerXml(AsyncCallback callback, object state, string xmlName);
+      string End_DownloadInnerXml(IAsyncResult asyncResult);
       #endif
     }
 
@@ -230,6 +240,142 @@ namespace Client
         throw new TApplicationException(TApplicationException.ExceptionType.MissingResult, "UploadInnerXml failed: unknown result");
       }
 
+      
+      #if SILVERLIGHT
+      
+      public IAsyncResult Begin_GetServerXmlList(AsyncCallback callback, object state)
+      {
+        return send_GetServerXmlList(callback, state);
+      }
+
+      public List<string> End_GetServerXmlList(IAsyncResult asyncResult)
+      {
+        oprot_.Transport.EndFlush(asyncResult);
+        return recv_GetServerXmlList();
+      }
+
+      #endif
+
+      public List<string> GetServerXmlList()
+      {
+        #if SILVERLIGHT
+        var asyncResult = Begin_GetServerXmlList(null, null);
+        return End_GetServerXmlList(asyncResult);
+
+        #else
+        send_GetServerXmlList();
+        return recv_GetServerXmlList();
+
+        #endif
+      }
+      #if SILVERLIGHT
+      public IAsyncResult send_GetServerXmlList(AsyncCallback callback, object state)
+      {
+        oprot_.WriteMessageBegin(new TMessage("GetServerXmlList", TMessageType.Call, seqid_));
+        GetServerXmlList_args args = new GetServerXmlList_args();
+        args.Write(oprot_);
+        oprot_.WriteMessageEnd();
+        return oprot_.Transport.BeginFlush(callback, state);
+      }
+
+      #else
+
+      public void send_GetServerXmlList()
+      {
+        oprot_.WriteMessageBegin(new TMessage("GetServerXmlList", TMessageType.Call, seqid_));
+        GetServerXmlList_args args = new GetServerXmlList_args();
+        args.Write(oprot_);
+        oprot_.WriteMessageEnd();
+        oprot_.Transport.Flush();
+      }
+      #endif
+
+      public List<string> recv_GetServerXmlList()
+      {
+        TMessage msg = iprot_.ReadMessageBegin();
+        if (msg.Type == TMessageType.Exception) {
+          TApplicationException x = TApplicationException.Read(iprot_);
+          iprot_.ReadMessageEnd();
+          throw x;
+        }
+        GetServerXmlList_result result = new GetServerXmlList_result();
+        result.Read(iprot_);
+        iprot_.ReadMessageEnd();
+        if (result.__isset.success) {
+          return result.Success;
+        }
+        throw new TApplicationException(TApplicationException.ExceptionType.MissingResult, "GetServerXmlList failed: unknown result");
+      }
+
+      
+      #if SILVERLIGHT
+      
+      public IAsyncResult Begin_DownloadInnerXml(AsyncCallback callback, object state, string xmlName)
+      {
+        return send_DownloadInnerXml(callback, state, xmlName);
+      }
+
+      public string End_DownloadInnerXml(IAsyncResult asyncResult)
+      {
+        oprot_.Transport.EndFlush(asyncResult);
+        return recv_DownloadInnerXml();
+      }
+
+      #endif
+
+      public string DownloadInnerXml(string xmlName)
+      {
+        #if SILVERLIGHT
+        var asyncResult = Begin_DownloadInnerXml(null, null, xmlName);
+        return End_DownloadInnerXml(asyncResult);
+
+        #else
+        send_DownloadInnerXml(xmlName);
+        return recv_DownloadInnerXml();
+
+        #endif
+      }
+      #if SILVERLIGHT
+      public IAsyncResult send_DownloadInnerXml(AsyncCallback callback, object state, string xmlName)
+      {
+        oprot_.WriteMessageBegin(new TMessage("DownloadInnerXml", TMessageType.Call, seqid_));
+        DownloadInnerXml_args args = new DownloadInnerXml_args();
+        args.XmlName = xmlName;
+        args.Write(oprot_);
+        oprot_.WriteMessageEnd();
+        return oprot_.Transport.BeginFlush(callback, state);
+      }
+
+      #else
+
+      public void send_DownloadInnerXml(string xmlName)
+      {
+        oprot_.WriteMessageBegin(new TMessage("DownloadInnerXml", TMessageType.Call, seqid_));
+        DownloadInnerXml_args args = new DownloadInnerXml_args();
+        args.XmlName = xmlName;
+        args.Write(oprot_);
+        oprot_.WriteMessageEnd();
+        oprot_.Transport.Flush();
+      }
+      #endif
+
+      public string recv_DownloadInnerXml()
+      {
+        TMessage msg = iprot_.ReadMessageBegin();
+        if (msg.Type == TMessageType.Exception) {
+          TApplicationException x = TApplicationException.Read(iprot_);
+          iprot_.ReadMessageEnd();
+          throw x;
+        }
+        DownloadInnerXml_result result = new DownloadInnerXml_result();
+        result.Read(iprot_);
+        iprot_.ReadMessageEnd();
+        if (result.__isset.success) {
+          return result.Success;
+        }
+        throw new TApplicationException(TApplicationException.ExceptionType.MissingResult, "DownloadInnerXml failed: unknown result");
+      }
+
     }
     public class Processor : TProcessor {
       public Processor(ISync iface)
@@ -237,6 +383,8 @@ namespace Client
         iface_ = iface;
         processMap_["Transfer"] = Transfer_Process;
         processMap_["UploadInnerXml"] = UploadInnerXml_Process;
+        processMap_["GetServerXmlList"] = GetServerXmlList_Process;
+        processMap_["DownloadInnerXml"] = DownloadInnerXml_Process;
       }
 
       protected delegate void ProcessFunction(int seqid, TProtocol iprot, TProtocol oprot);
@@ -319,6 +467,62 @@ namespace Client
           Console.Error.WriteLine(ex.ToString());
           TApplicationException x = new TApplicationException        (TApplicationException.ExceptionType.InternalError," Internal error.");
           oprot.WriteMessageBegin(new TMessage("UploadInnerXml", TMessageType.Exception, seqid));
+          x.Write(oprot);
+        }
+        oprot.WriteMessageEnd();
+        oprot.Transport.Flush();
+      }
+
+      public void GetServerXmlList_Process(int seqid, TProtocol iprot, TProtocol oprot)
+      {
+        GetServerXmlList_args args = new GetServerXmlList_args();
+        args.Read(iprot);
+        iprot.ReadMessageEnd();
+        GetServerXmlList_result result = new GetServerXmlList_result();
+        try
+        {
+          result.Success = iface_.GetServerXmlList();
+          oprot.WriteMessageBegin(new TMessage("GetServerXmlList", TMessageType.Reply, seqid)); 
+          result.Write(oprot);
+        }
+        catch (TTransportException)
+        {
+          throw;
+        }
+        catch (Exception ex)
+        {
+          Console.Error.WriteLine("Error occurred in processor:");
+          Console.Error.WriteLine(ex.ToString());
+          TApplicationException x = new TApplicationException        (TApplicationException.ExceptionType.InternalError," Internal error.");
+          oprot.WriteMessageBegin(new TMessage("GetServerXmlList", TMessageType.Exception, seqid));
+          x.Write(oprot);
+        }
+        oprot.WriteMessageEnd();
+        oprot.Transport.Flush();
+      }
+
+      public void DownloadInnerXml_Process(int seqid, TProtocol iprot, TProtocol oprot)
+      {
+        DownloadInnerXml_args args = new DownloadInnerXml_args();
+        args.Read(iprot);
+        iprot.ReadMessageEnd();
+        DownloadInnerXml_result result = new DownloadInnerXml_result();
+        try
+        {
+          result.Success = iface_.DownloadInnerXml(args.XmlName);
+          oprot.WriteMessageBegin(new TMessage("DownloadInnerXml", TMessageType.Reply, seqid)); 
+          result.Write(oprot);
+        }
+        catch (TTransportException)
+        {
+          throw;
+        }
+        catch (Exception ex)
+        {
+          Console.Error.WriteLine("Error occurred in processor:");
+          Console.Error.WriteLine(ex.ToString());
+          TApplicationException x = new TApplicationException        (TApplicationException.ExceptionType.InternalError," Internal error.");
+          oprot.WriteMessageBegin(new TMessage("DownloadInnerXml", TMessageType.Exception, seqid));
           x.Write(oprot);
         }
         oprot.WriteMessageEnd();
@@ -788,6 +992,415 @@ namespace Client
 
       public override string ToString() {
         StringBuilder __sb = new StringBuilder("UploadInnerXml_result(");
+        bool __first = true;
+        if (Success != null && __isset.success) {
+          if(!__first) { __sb.Append(", "); }
+          __first = false;
+          __sb.Append("Success: ");
+          __sb.Append(Success);
+        }
+        __sb.Append(")");
+        return __sb.ToString();
+      }
+
+    }
+
+
+    #if !SILVERLIGHT
+    [Serializable]
+    #endif
+    public partial class GetServerXmlList_args : TBase
+    {
+
+      public GetServerXmlList_args() {
+      }
+
+      public void Read (TProtocol iprot)
+      {
+        iprot.IncrementRecursionDepth();
+        try
+        {
+          TField field;
+          iprot.ReadStructBegin();
+          while (true)
+          {
+            field = iprot.ReadFieldBegin();
+            if (field.Type == TType.Stop) { 
+              break;
+            }
+            switch (field.ID)
+            {
+              default: 
+                TProtocolUtil.Skip(iprot, field.Type);
+                break;
+            }
+            iprot.ReadFieldEnd();
+          }
+          iprot.ReadStructEnd();
+        }
+        finally
+        {
+          iprot.DecrementRecursionDepth();
+        }
+      }
+
+      public void Write(TProtocol oprot) {
+        oprot.IncrementRecursionDepth();
+        try
+        {
+          TStruct struc = new TStruct("GetServerXmlList_args");
+          oprot.WriteStructBegin(struc);
+          oprot.WriteFieldStop();
+          oprot.WriteStructEnd();
+        }
+        finally
+        {
+          oprot.DecrementRecursionDepth();
+        }
+      }
+
+      public override string ToString() {
+        StringBuilder __sb = new StringBuilder("GetServerXmlList_args(");
+        __sb.Append(")");
+        return __sb.ToString();
+      }
+
+    }
+
+
+    #if !SILVERLIGHT
+    [Serializable]
+    #endif
+    public partial class GetServerXmlList_result : TBase
+    {
+      private List<string> _success;
+
+      public List<string> Success
+      {
+        get
+        {
+          return _success;
+        }
+        set
+        {
+          __isset.success = true;
+          this._success = value;
+        }
+      }
+
+
+      public Isset __isset;
+      #if !SILVERLIGHT
+      [Serializable]
+      #endif
+      public struct Isset {
+        public bool success;
+      }
+
+      public GetServerXmlList_result() {
+      }
+
+      public void Read (TProtocol iprot)
+      {
+        iprot.IncrementRecursionDepth();
+        try
+        {
+          TField field;
+          iprot.ReadStructBegin();
+          while (true)
+          {
+            field = iprot.ReadFieldBegin();
+            if (field.Type == TType.Stop) { 
+              break;
+            }
+            switch (field.ID)
+            {
+              case 0:
+                if (field.Type == TType.List) {
+                  {
+                    Success = new List<string>();
+                    TList _list0 = iprot.ReadListBegin();
+                    for( int _i1 = 0; _i1 < _list0.Count; ++_i1)
+                    {
+                      string _elem2;
+                      _elem2 = iprot.ReadString();
+                      Success.Add(_elem2);
+                    }
+                    iprot.ReadListEnd();
+                  }
+                } else { 
+                  TProtocolUtil.Skip(iprot, field.Type);
+                }
+                break;
+              default: 
+                TProtocolUtil.Skip(iprot, field.Type);
+                break;
+            }
+            iprot.ReadFieldEnd();
+          }
+          iprot.ReadStructEnd();
+        }
+        finally
+        {
+          iprot.DecrementRecursionDepth();
+        }
+      }
+
+      public void Write(TProtocol oprot) {
+        oprot.IncrementRecursionDepth();
+        try
+        {
+          TStruct struc = new TStruct("GetServerXmlList_result");
+          oprot.WriteStructBegin(struc);
+          TField field = new TField();
+
+          if (this.__isset.success) {
+            if (Success != null) {
+              field.Name = "Success";
+              field.Type = TType.List;
+              field.ID = 0;
+              oprot.WriteFieldBegin(field);
+              {
+                oprot.WriteListBegin(new TList(TType.String, Success.Count));
+                foreach (string _iter3 in Success)
+                {
+                  oprot.WriteString(_iter3);
+                }
+                oprot.WriteListEnd();
+              }
+              oprot.WriteFieldEnd();
+            }
+          }
+          oprot.WriteFieldStop();
+          oprot.WriteStructEnd();
+        }
+        finally
+        {
+          oprot.DecrementRecursionDepth();
+        }
+      }
+
+      public override string ToString() {
+        StringBuilder __sb = new StringBuilder("GetServerXmlList_result(");
+        bool __first = true;
+        if (Success != null && __isset.success) {
+          if(!__first) { __sb.Append(", "); }
+          __first = false;
+          __sb.Append("Success: ");
+          __sb.Append(Success);
+        }
+        __sb.Append(")");
+        return __sb.ToString();
+      }
+
+    }
+
+
+    #if !SILVERLIGHT
+    [Serializable]
+    #endif
+    public partial class DownloadInnerXml_args : TBase
+    {
+      private string _xmlName;
+
+      public string XmlName
+      {
+        get
+        {
+          return _xmlName;
+        }
+        set
+        {
+          __isset.xmlName = true;
+          this._xmlName = value;
+        }
+      }
+
+
+      public Isset __isset;
+      #if !SILVERLIGHT
+      [Serializable]
+      #endif
+      public struct Isset {
+        public bool xmlName;
+      }
+
+      public DownloadInnerXml_args() {
+      }
+
+      public void Read (TProtocol iprot)
+      {
+        iprot.IncrementRecursionDepth();
+        try
+        {
+          TField field;
+          iprot.ReadStructBegin();
+          while (true)
+          {
+            field = iprot.ReadFieldBegin();
+            if (field.Type == TType.Stop) { 
+              break;
+            }
+            switch (field.ID)
+            {
+              case 1:
+                if (field.Type == TType.String) {
+                  XmlName = iprot.ReadString();
+                } else { 
+                  TProtocolUtil.Skip(iprot, field.Type);
+                }
+                break;
+              default: 
+                TProtocolUtil.Skip(iprot, field.Type);
+                break;
+            }
+            iprot.ReadFieldEnd();
+          }
+          iprot.ReadStructEnd();
+        }
+        finally
+        {
+          iprot.DecrementRecursionDepth();
+        }
+      }
+
+      public void Write(TProtocol oprot) {
+        oprot.IncrementRecursionDepth();
+        try
+        {
+          TStruct struc = new TStruct("DownloadInnerXml_args");
+          oprot.WriteStructBegin(struc);
+          TField field = new TField();
+          if (XmlName != null && __isset.xmlName) {
+            field.Name = "xmlName";
+            field.Type = TType.String;
+            field.ID = 1;
+            oprot.WriteFieldBegin(field);
+            oprot.WriteString(XmlName);
+            oprot.WriteFieldEnd();
+          }
+          oprot.WriteFieldStop();
+          oprot.WriteStructEnd();
+        }
+        finally
+        {
+          oprot.DecrementRecursionDepth();
+        }
+      }
+
+      public override string ToString() {
+        StringBuilder __sb = new StringBuilder("DownloadInnerXml_args(");
+        bool __first = true;
+        if (XmlName != null && __isset.xmlName) {
+          if(!__first) { __sb.Append(", "); }
+          __first = false;
+          __sb.Append("XmlName: ");
+          __sb.Append(XmlName);
+        }
+        __sb.Append(")");
+        return __sb.ToString();
+      }
+
+    }
+
+
+    #if !SILVERLIGHT
+    [Serializable]
+    #endif
+    public partial class DownloadInnerXml_result : TBase
+    {
+      private string _success;
+
+      public string Success
+      {
+        get
+        {
+          return _success;
+        }
+        set
+        {
+          __isset.success = true;
+          this._success = value;
+        }
+      }
+
+
+      public Isset __isset;
+      #if !SILVERLIGHT
+      [Serializable]
+      #endif
+      public struct Isset {
+        public bool success;
+      }
+
+      public DownloadInnerXml_result() {
+      }
+
+      public void Read (TProtocol iprot)
+      {
+        iprot.IncrementRecursionDepth();
+        try
+        {
+          TField field;
+          iprot.ReadStructBegin();
+          while (true)
+          {
+            field = iprot.ReadFieldBegin();
+            if (field.Type == TType.Stop) { 
+              break;
+            }
+            switch (field.ID)
+            {
+              case 0:
+                if (field.Type == TType.String) {
+                  Success = iprot.ReadString();
+                } else { 
+                  TProtocolUtil.Skip(iprot, field.Type);
+                }
+                break;
+              default: 
+                TProtocolUtil.Skip(iprot, field.Type);
+                break;
+            }
+            iprot.ReadFieldEnd();
+          }
+          iprot.ReadStructEnd();
+        }
+        finally
+        {
+          iprot.DecrementRecursionDepth();
+        }
+      }
+
+      public void Write(TProtocol oprot) {
+        oprot.IncrementRecursionDepth();
+        try
+        {
+          TStruct struc = new TStruct("DownloadInnerXml_result");
+          oprot.WriteStructBegin(struc);
+          TField field = new TField();
+
+          if (this.__isset.success) {
+            if (Success != null) {
+              field.Name = "Success";
+              field.Type = TType.String;
+              field.ID = 0;
+              oprot.WriteFieldBegin(field);
+              oprot.WriteString(Success);
+              oprot.WriteFieldEnd();
+            }
+          }
+          oprot.WriteFieldStop();
+          oprot.WriteStructEnd();
+        }
+        finally
+        {
+          oprot.DecrementRecursionDepth();
+        }
+      }
+
+      public override string ToString() {
+        StringBuilder __sb = new StringBuilder("DownloadInnerXml_result(");
         bool __first = true;
         if (Success != null && __isset.success) {
           if(!__first) { __sb.Append(", "); }

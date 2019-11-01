@@ -36,45 +36,67 @@ namespace Client
 				Environment.Exit(0);
 			}
 
-			bool switchOptions = true;
+			bool keepConnectionAlive = true;
 
-			while (switchOptions)
+			while (keepConnectionAlive)
 			{
-				Console.WriteLine("Choose am option by inserting the option number:");
-				Console.WriteLine("1. Communicate with server by a string");
-				Console.WriteLine("2. Upload an XML file to server database");
-				
-				// read user input
-				string userInput = Console.ReadLine();
+				bool switchOptions = true;
 
-				switch (userInput)
+				while (switchOptions)
 				{
-					case "1":
-						// Call TransferString function
-						CallTransfer(client);
-						switchOptions = false;
-						break;
-					case "2":
-						// Call TransferInnerXml function
-						CallUploadInnerXml(client);
-						switchOptions = false;
-						break;
-					default:
-						Console.WriteLine("Wrong option! Please try again!");
-						break;
+					Console.WriteLine("\n\nChoose am option by inserting the option number:");
+					Console.WriteLine("1. Communicate with server by a string");
+					Console.WriteLine("2. Upload an XML file to server database");
+					Console.WriteLine("3. Download an XML file from server database");
+
+					// read user input
+					string userInput = Console.ReadLine();
+
+					switch (userInput)
+					{
+						case "1":
+							// Call Transfer function
+							CallTransfer(client);
+							switchOptions = false;
+							break;
+						case "2":
+							// Call UploadInnerXml function
+							CallUploadInnerXml(client);
+							switchOptions = false;
+							break;
+						case "3":
+							// Call DownloadInnerXml function
+							CallDownloadInnerXml(client);
+							switchOptions = false;
+							break;
+						default:
+							Console.WriteLine("Wrong option! Please try again!");
+							break;
+					}
+				}
+
+				Console.WriteLine("\n\nKeep connection alive? - Y/N");
+				var answer = Console.ReadKey();
+
+				// check user answer
+				if (answer.KeyChar.ToString().ToUpper() != "Y")
+				{
+					keepConnectionAlive = false;
 				}
 			}
 
 			// Handle console closure
-			Console.WriteLine("\n\n\nPress any key to close ... ");
+			Console.WriteLine("\n\n\nPress any key to close connection ... ");
 			Console.ReadKey();
 
 			// Close server connection
 			transport.Close();
 		}
 
-
-
+		/// <summary>
+		/// Create Client 
+		/// </summary>
+		/// <returns></returns>
 		private static Tuple<FileTransferService.Client, TTransport> CreateClient()
 		{
 			// Create the transport socket 
@@ -92,7 +114,7 @@ namespace Client
 		
 		private static void CallTransfer(FileTransferService.Client client)
 		{
-			Console.WriteLine("Send a message to server:");
+			Console.WriteLine("\nSend a message to server:");
 
 			// read user input
 			string userInput = Console.ReadLine();
@@ -102,9 +124,13 @@ namespace Client
 			Console.WriteLine(client.Transfer(userInput));
 		}
 
+		/// <summary>
+		/// Upload a xml file to server database folder
+		/// </summary>
+		/// <param name="client"></param>
 		private static void CallUploadInnerXml(FileTransferService.Client client)
 		{
-			Console.WriteLine("Insert file name:");
+			Console.WriteLine("\nInsert file name:");
 			string saveName = Console.ReadLine();
 
 			Console.WriteLine("Insert full xml local path:");
@@ -131,6 +157,80 @@ namespace Client
 			// In this case "UploadInnerXml" function
 			Console.WriteLine(client.UploadInnerXml(saveName, doc.InnerXml));
 
+		}
+
+
+		/// <summary>
+		/// Download a xml file from server database folder
+		/// </summary>
+		/// <param name="client"></param>
+		/// <returns></returns>
+		private static void CallDownloadInnerXml(FileTransferService.Client client)
+		{
+			var xmlServerFiles = GetXmlFIleFromServer(client);
+
+			if (!xmlServerFiles.Item1)
+			{
+				Console.WriteLine("\nNo xml files server database!");
+				return;
+			}
+
+			Console.WriteLine("\nXml file on server:");
+
+			foreach (var xmlFile in xmlServerFiles.Item2)
+			{
+				Console.WriteLine($"{xmlFile}");
+			}
+
+			Console.WriteLine("\nPlease insert the fully qualified name of the file you want to download:");
+			var xmlFileName = Console.ReadLine();
+
+			// create a XML document
+			XmlDocument doc = new XmlDocument();
+
+			// get innerXml from server
+			var innerXml = client.DownloadInnerXml(xmlFileName);
+
+			try
+			{
+				// check if received document is a valid xml
+				doc.LoadXml(innerXml);
+			}
+			catch (Exception e)
+			{
+				Console.WriteLine($"\nERROR! Cannot find a valid xml file with this name: {xmlFileName}");
+				return;
+			}
+
+			// set saving path
+			string desktopPath = Environment.GetFolderPath(Environment.SpecialFolder.Desktop);
+			var pathToSave = desktopPath + $"\\{xmlFileName}";
+
+			// save the document
+			doc.Save(pathToSave);
+
+			Console.WriteLine($"The xml file was correctly downloaded at this path: '{pathToSave}'.") ;
+		}
+
+
+		/// <summary>
+		/// Get xml list from server database folder
+		/// </summary>
+		/// <param name="client"></param>
+		/// <returns>
+		///	Tuple.Item1 = true - if are xml files on server database folder
+		/// Tuple.Item2 - xml files from server database folder
+		/// </returns>
+		private static Tuple<bool, List<string>> GetXmlFIleFromServer(FileTransferService.Client client)
+		{
+			var xmlList = client.GetServerXmlList();
+
+			if (xmlList.Count == 0)
+			{
+				return new Tuple<bool, List<string>>(false, xmlList);
+			}
+
+			return new Tuple<bool, List<string>>(true, xmlList);
 		}
 	}
 }
